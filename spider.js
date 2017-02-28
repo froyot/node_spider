@@ -45,8 +45,9 @@ var Spider = function(){
 	function getDataByUrl(url){
 		
 		var deferred = Q.defer();
-		superagent.get(url).end(function(err,sres){
+		superagent.get(url).timeout(10000).end(function(err,sres){
 			if (err) {
+				console.log("get",url," data error",err);
 		        deferred.reject(err);
 		    }
 		    else
@@ -56,6 +57,7 @@ var Spider = function(){
 		        $('.x-wiki-content').find('img').remove();
 		        var content = $('.x-wiki-content').html();
 		        deferred.resolve(content+"<br/><br/>\n\r\n"); 
+		        console.log("get",url," success");
 		    }
 
 		});
@@ -64,15 +66,16 @@ var Spider = function(){
 
 	//保存到缓存文件
 	function saveToTemFile(tmpfile,data){
-		console.log("save file "+tmpfile)
+		
 		var deferred = Q.defer();
-		fs.appendFile(__dirname + '/'+tmpfile, data, function (err) {
+		fs.appendFile(tmpfile, data, function (err) {
 			if(err){
 				deferred.reject(err);
+
 			}
 			else
 			{
-			  	console.log('追加内容完成');
+				
 			  	deferred.resolve(); 				
 			}
 
@@ -83,9 +86,9 @@ var Spider = function(){
 	//保存数据到pdf文件
 	function saveToPdf(file,tmpfile){
 		var wkhtmltopdf = require('wkhtmltopdf');
-		if(fs.existsSync(__dirname + '/'+tmpfile))
+		if(fs.existsSync(tmpfile))
 		{
-			var stream = fs.createReadStream(__dirname + '/'+tmpfile);
+			var stream = fs.createReadStream(tmpfile);
 			wkhtmltopdf(stream).pipe(fs.createWriteStream('out.pdf'));
 		}
 		
@@ -94,9 +97,9 @@ var Spider = function(){
 
 
 	this.getData = function(url){
-		var tmpfile = 'content.html';
-		if(fs.existsSync(__dirname + '/'+tmpfile))
-			fs.unlink(__dirname + '/'+tmpfile);
+		var tmpfile = __dirname + '/'+'content.tmp';
+		if(fs.existsSync(tmpfile))
+			fs.unlink(tmpfile);
 		var urlInfo = URL.parse(url);
 		getPages(url).then(function(data){
 			//限制并发数目1，保证顺序正确
@@ -109,6 +112,8 @@ var Spider = function(){
 					});
 			    }, function(err, results) {
 							saveToPdf("file.pdf",tmpfile);
+							if(fs.existsSync(tmpfile))
+								fs.unlink(tmpfile);
 			});
 		});
 	}
