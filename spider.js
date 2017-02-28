@@ -45,14 +45,17 @@ var Spider = function(){
 	function getDataByUrl(url){
 		
 		var deferred = Q.defer();
-		superagent.get(url).timeout(10000).end(function(err,sres){
+		superagent.get(url)
+		// .timeout(60000)
+		// .set('User-Agent','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36')
+		.end(function(err,sres){
 			if (err) {
 				console.log("get",url," data error",err);
 		        deferred.reject(err);
 		    }
 		    else
 		    {
-			    var $ = cheerio.load(sres.text);
+			    var $ = cheerio.load(sres.text,{decodeEntities: false});
 		        //获取正文
 		        $('.x-wiki-content').find('img').remove();
 		        var content = $('.x-wiki-content').html();
